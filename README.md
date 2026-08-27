@@ -1,8 +1,8 @@
 # Protein Tracker
 
-Protein Tracker is a single-user ASP.NET Core Web API for maintaining reusable food definitions, recording consumed food, configuring daily macronutrient targets, and viewing daily nutrition summaries.
+Protein Tracker is an authenticated ASP.NET Core and React application for maintaining reusable food definitions, recording consumed food, configuring daily macronutrient targets, and viewing daily nutrition summaries.
 
-The backend exposes HTTP endpoints and persists data in PostgreSQL. The repository also contains a React frontend for the core tracking workflows. Authentication and multi-user data separation are not currently included.
+The backend exposes JWT-protected HTTP endpoints and persists data in PostgreSQL. Each account has an isolated food library, entries, target, and summaries. The repository also contains a React frontend for the core tracking workflows.
 
 ## Current functionality
 
@@ -12,6 +12,7 @@ The backend exposes HTTP endpoints and persists data in PostgreSQL. The reposito
 - Configure one current daily protein, carbohydrate, and fat target.
 - Retrieve a daily summary containing consumed, target, and remaining nutrition.
 - Explore and manually invoke the API through Swagger UI in development.
+- Register, log in, log out, and access only the nutrition data owned by the authenticated account.
 
 Archived foods cannot be selected for new or reassigned food entries. Existing entries may continue referencing an archived food, and their amount or timestamp can still be corrected. Permanent deletion is limited to archived foods with no historical FoodEntry references.
 
@@ -57,12 +58,13 @@ Controller → Service → Repository → EF Core → PostgreSQL
 | `ProteinTracker.Api/DTOs/` | HTTP request and response contracts |
 | `ProteinTracker.Api/Utils/` | Pure reusable nutrition calculations |
 | `ProteinTracker.Api/Exceptions/` | Business exceptions and centralized `ProblemDetails` handling |
+| `ProteinTracker.Api/Security/` | Current-user claim access and JWT configuration |
 | `ProteinTracker.Api/Swagger/` | OpenAPI metadata, endpoint documentation, and request examples |
 | `ProteinTracker.Api/Migrations/` | EF Core PostgreSQL schema migrations |
 | `ProteinTracker.Api.Tests/` | xUnit tests for calculations and service behavior |
 | `ProteinTracker.Web/` | React, TypeScript, and Vite frontend with a typed API client |
 
-Controllers are intentionally thin. They delegate validation, nutrition calculations, archive rules, and timezone behavior to services.
+Controllers are intentionally thin. They delegate validation, nutrition calculations, archive rules, and timezone behavior to services. JWT middleware establishes identity, while repositories enforce ownership in every application-data query.
 
 ## Technology stack
 
@@ -70,6 +72,7 @@ Controllers are intentionally thin. They delegate validation, nutrition calculat
 - Entity Framework Core 8
 - PostgreSQL through `Npgsql.EntityFrameworkCore.PostgreSQL`
 - Swashbuckle Swagger/OpenAPI
+- ASP.NET Core JWT bearer authentication and password hashing
 - xUnit with EF Core InMemory for automated service tests
 - React 19, TypeScript, and Vite for the web application
 - React Router for client-side routes
@@ -83,18 +86,22 @@ Controllers are intentionally thin. They delegate validation, nutrition calculat
 | Food entries | `/api/food-entries` | Get entries, query an offset-aware timestamp range, create, update, and delete consumption records |
 | Daily target | `/api/daily-target` | Read or update the single current macro target |
 | Daily summary | `/api/daily-summary` | Get consumed, target, and remaining nutrition for a Bratislava calendar date |
+| Authentication | `/api/auth` | Register or log in and receive a JWT bearer token |
 
 Swagger contains the detailed routes, request examples, business behavior, and response documentation.
 
 ## Database model
 
-The initial migration creates three application tables:
+The migrations create four application tables:
 
 - `Foods`: reusable per-100g nutritional definitions and the `IsArchived` soft-archive flag.
 - `FoodEntries`: consumed amounts and UTC timestamps linked to Foods.
 - `DailyTargets`: the current macro-target persistence model.
+- `Users`: normalized unique emails, password hashes, and account creation timestamps.
 
-`Food` has a one-to-many relationship with `FoodEntry`. `FoodEntry.FoodId` is required and indexed. The foreign key uses restrictive deletion, so a referenced Food cannot be physically deleted along with historical entries. Foods are normally archived; only unused archived Foods and individual FoodEntries may be physically deleted.
+Foods, FoodEntries, and DailyTargets carry required User ownership. Every repository query includes the authenticated User ID. FoodEntry uses a composite `(FoodId, UserId)` foreign key, preventing cross-user Food assignment at the database layer as well. DailyTarget has one unique row per User.
+
+The authentication/ownership migration intentionally deletes legacy Foods, FoodEntries, and DailyTargets because those older rows have no trustworthy owner. It never assigns existing private data to an arbitrary account. The existing Food-to-FoodEntry restrictive deletion behavior remains in place.
 
 Decimal nutrition and gram columns use PostgreSQL `numeric(10,3)` precision.
 
@@ -105,6 +112,7 @@ The global ASP.NET Core exception handler converts known application exceptions 
 - Invalid business input and attempts to assign archived foods return HTTP 400.
 - Missing foods or food entries return HTTP 404.
 - Attempts to delete Foods referenced by historical entries return HTTP 409.
+- Missing or invalid bearer tokens return HTTP 401.
 - Unexpected failures return HTTP 500 with generic client-facing details; internal exception details are not exposed.
 
 Controllers allow these exceptions to reach the centralized handler.
@@ -144,6 +152,7 @@ Supply your own PostgreSQL username and password. Do not commit real credentials
 
 ```bash
 export ConnectionStrings__ProteinTrackerDatabase='Host=localhost;Port=5432;Database=protein_tracker;Username=YOUR_USERNAME;Password=YOUR_PASSWORD'
+export Jwt__SigningKey='A_RANDOM_LOCAL_SECRET_AT_LEAST_32_CHARACTERS_LONG'
 ```
 
 The environment variable overrides the value in `ProteinTracker.Api/appsettings.Development.json`.
@@ -155,6 +164,9 @@ dotnet user-secrets init --project ProteinTracker.Api/ProteinTracker.Api.csproj
 dotnet user-secrets set --project ProteinTracker.Api/ProteinTracker.Api.csproj \
   'ConnectionStrings:ProteinTrackerDatabase' \
   'Host=localhost;Port=5432;Database=protein_tracker;Username=YOUR_USERNAME;Password=YOUR_PASSWORD'
+dotnet user-secrets set --project ProteinTracker.Api/ProteinTracker.Api.csproj \
+  'Jwt:SigningKey' \
+  'A_RANDOM_LOCAL_SECRET_AT_LEAST_32_CHARACTERS_LONG'
 ```
 
 User-secrets are stored outside the repository. Replace the placeholders only in your local command; do not commit the resulting secret value.
@@ -167,7 +179,7 @@ Docker Compose runs the production frontend, API, and an isolated PostgreSQL dat
 cp .env.example .env
 ```
 
-Replace the username and password placeholders in `.env` with local Docker-only credentials, then start the stack:
+Replace the database placeholders and `JWT_SIGNING_KEY` with local Docker-only secrets, then start the stack:
 
 ```bash
 docker compose up --build
@@ -185,7 +197,13 @@ docker compose down
 
 To deliberately remove the local Docker database as well, use `docker compose down --volumes`. This permanently deletes the Compose-managed data volume.
 
-The `.env` file is ignored by Git. Never commit real database credentials or other secrets; `.env.example` contains placeholders only.
+The `.env` file is ignored by Git. Never commit real database credentials, JWT signing keys, or other secrets; `.env.example` contains placeholders only.
+
+## Frontend authentication
+
+The frontend protects `/`, `/foods`, and `/targets`; unauthenticated visitors are redirected to `/login`. Registration is available at `/register`. The centralized API client adds the bearer token to requests and clears the session on HTTP 401 so expired or invalid sessions return to login.
+
+For this local MVP, the JWT and its expiry are stored in `localStorage`. This keeps login state across refreshes and works with the same-origin nginx proxy, but JavaScript-accessible storage can expose tokens if an XSS vulnerability exists. A production deployment should prefer short-lived access tokens held in memory with refresh credentials in `Secure`, `HttpOnly`, `SameSite` cookies, alongside an appropriate CSRF strategy and a hardened content-security policy.
 
 ### Apply migrations
 
@@ -217,7 +235,7 @@ dotnet run --project ProteinTracker.Api/ProteinTracker.Api.csproj --launch-profi
 dotnet test ProteinTracker.sln
 ```
 
-The tests cover nutrition calculations and the Food, FoodEntry, DailyTarget, and DailySummary service rules, including archive behavior, upserts, current-value nutrition, UTC normalization, and Bratislava day boundaries. They use EF Core InMemory for isolation and speed; this does not replace integration testing against PostgreSQL/Npgsql for provider-specific behavior.
+The tests cover registration, login, password hashing, unauthenticated HTTP rejection, cross-user ownership boundaries, and the Food, FoodEntry, DailyTarget, and DailySummary rules. This includes cross-user FoodEntry protection, archive behavior, upserts, current-value nutrition, UTC normalization, and Bratislava day boundaries. Most persistence tests use EF Core InMemory for isolation and speed; this does not replace integration testing against PostgreSQL/Npgsql for provider-specific behavior.
 
 ### Run the frontend
 
@@ -239,4 +257,4 @@ Swagger is enabled only when the application runs in the Development environment
 - `https://localhost:7202/swagger` with the `https` profile
 - `http://localhost:5132/swagger` with either project profile
 
-Swagger UI includes endpoint descriptions, documented status codes, `ProblemDetails` responses, request examples, and a preconfigured daily-summary date example.
+Swagger UI includes endpoint descriptions, documented status codes, `ProblemDetails` responses, request examples, and JWT Bearer authorization support. Register or log in, copy the returned token into Swagger's Authorize dialog, then exercise the protected endpoints.

@@ -28,6 +28,14 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
                 StatusCodes.Status409Conflict,
                 "Food is referenced by historical entries",
                 exception.Message),
+            EmailAlreadyRegisteredException => (
+                StatusCodes.Status409Conflict,
+                "Email already registered",
+                exception.Message),
+            InvalidCredentialsException => (
+                StatusCodes.Status401Unauthorized,
+                "Authentication failed",
+                exception.Message),
             BusinessValidationException => (
                 StatusCodes.Status400BadRequest,
                 "Validation failed",

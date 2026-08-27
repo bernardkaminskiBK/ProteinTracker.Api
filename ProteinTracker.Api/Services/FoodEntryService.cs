@@ -2,13 +2,15 @@ using ProteinTracker.Api.DTOs;
 using ProteinTracker.Api.Exceptions;
 using ProteinTracker.Api.Models;
 using ProteinTracker.Api.Repositories;
+using ProteinTracker.Api.Security;
 using ProteinTracker.Api.Utils;
 
 namespace ProteinTracker.Api.Services;
 
 public class FoodEntryService(
     FoodEntryRepository foodEntryRepository,
-    FoodRepository foodRepository)
+    FoodRepository foodRepository,
+    CurrentUser currentUser)
 {
     public async Task<FoodEntryResponse> GetByIdAsync(
         int id,
@@ -26,6 +28,7 @@ public class FoodEntryService(
         var foodEntries = await foodEntryRepository.GetByDateRangeAsync(
             start.ToUniversalTime(),
             end.ToUniversalTime(),
+            currentUser.Id,
             cancellationToken);
 
         return foodEntries
@@ -43,6 +46,7 @@ public class FoodEntryService(
 
         var foodEntry = new FoodEntry
         {
+            UserId = currentUser.Id,
             FoodId = request.FoodId,
             AmountInGrams = request.AmountInGrams,
             ConsumedAt = request.ConsumedAt.ToUniversalTime()
@@ -88,7 +92,7 @@ public class FoodEntryService(
         int id,
         CancellationToken cancellationToken)
     {
-        return await foodEntryRepository.GetByIdAsync(id, cancellationToken)
+        return await foodEntryRepository.GetByIdAsync(id, currentUser.Id, cancellationToken)
             ?? throw new FoodEntryNotFoundException(id);
     }
 
@@ -96,7 +100,7 @@ public class FoodEntryService(
         int id,
         CancellationToken cancellationToken)
     {
-        return await foodRepository.GetByIdAsync(id, cancellationToken)
+        return await foodRepository.GetByIdAsync(id, currentUser.Id, cancellationToken)
             ?? throw new FoodNotFoundException(id);
     }
 

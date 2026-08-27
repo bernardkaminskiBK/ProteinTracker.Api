@@ -7,11 +7,12 @@ namespace ProteinTracker.Api.Repositories;
 public class DailyTargetRepository(ProteinTrackerDbContext context)
 {
     public async Task<DailyTarget?> GetCurrentAsync(
+        int userId,
         CancellationToken cancellationToken = default)
     {
         return await context.DailyTargets
             .AsNoTracking()
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(target => target.UserId == userId, cancellationToken);
     }
 
     public async Task AddAsync(

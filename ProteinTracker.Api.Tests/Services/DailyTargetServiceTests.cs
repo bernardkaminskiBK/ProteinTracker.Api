@@ -127,7 +127,9 @@ public class DailyTargetServiceTests
 
     private static DailyTargetService CreateService(ProteinTrackerDbContext context)
     {
-        return new DailyTargetService(new DailyTargetRepository(context));
+        return new DailyTargetService(
+            new DailyTargetRepository(context),
+            new ProteinTracker.Api.Security.CurrentUser(1));
     }
 
     private static UpdateDailyTargetRequest CreateRequest(
@@ -151,6 +153,7 @@ public class DailyTargetServiceTests
     {
         var target = new DailyTarget
         {
+            UserId = 1,
             ProteinTarget = protein,
             CarbohydratesTarget = carbohydrates,
             FatTarget = fat

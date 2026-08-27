@@ -1,5 +1,6 @@
 using ProteinTracker.Api.DTOs;
 using ProteinTracker.Api.Repositories;
+using ProteinTracker.Api.Security;
 using ProteinTracker.Api.Utils;
 
 namespace ProteinTracker.Api.Services;
@@ -7,7 +8,8 @@ namespace ProteinTracker.Api.Services;
 public class DailySummaryService(
     FoodEntryRepository foodEntryRepository,
     DailyTargetRepository dailyTargetRepository,
-    TimeZoneInfo localTimeZone)
+    TimeZoneInfo localTimeZone,
+    CurrentUser currentUser)
 {
     public async Task<DailySummaryResponse> GetAsync(
         DateOnly date,
@@ -23,8 +25,9 @@ public class DailySummaryService(
         var foodEntries = await foodEntryRepository.GetByDateRangeAsync(
             start,
             end,
+            currentUser.Id,
             cancellationToken);
-        var dailyTarget = await dailyTargetRepository.GetCurrentAsync(cancellationToken);
+        var dailyTarget = await dailyTargetRepository.GetCurrentAsync(currentUser.Id, cancellationToken);
 
         var consumed = new NutritionSummary();
 

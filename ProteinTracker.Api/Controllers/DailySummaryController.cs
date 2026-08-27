@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProteinTracker.Api.DTOs;
 using ProteinTracker.Api.Services;
@@ -5,6 +6,7 @@ using ProteinTracker.Api.Services;
 namespace ProteinTracker.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/daily-summary")]
 public class DailySummaryController(DailySummaryService dailySummaryService) : ControllerBase
 {

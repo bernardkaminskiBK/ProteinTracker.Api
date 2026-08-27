@@ -2,16 +2,17 @@ using ProteinTracker.Api.DTOs;
 using ProteinTracker.Api.Exceptions;
 using ProteinTracker.Api.Models;
 using ProteinTracker.Api.Repositories;
+using ProteinTracker.Api.Security;
 using ProteinTracker.Api.Utils;
 
 namespace ProteinTracker.Api.Services;
 
-public class DailyTargetService(DailyTargetRepository dailyTargetRepository)
+public class DailyTargetService(DailyTargetRepository dailyTargetRepository, CurrentUser currentUser)
 {
     public async Task<DailyTargetResponse> GetCurrentAsync(
         CancellationToken cancellationToken = default)
     {
-        var dailyTarget = await dailyTargetRepository.GetCurrentAsync(cancellationToken);
+        var dailyTarget = await dailyTargetRepository.GetCurrentAsync(currentUser.Id, cancellationToken);
 
         return dailyTarget is null
             ? new DailyTargetResponse()
@@ -24,12 +25,13 @@ public class DailyTargetService(DailyTargetRepository dailyTargetRepository)
     {
         Validate(request);
 
-        var dailyTarget = await dailyTargetRepository.GetCurrentAsync(cancellationToken);
+        var dailyTarget = await dailyTargetRepository.GetCurrentAsync(currentUser.Id, cancellationToken);
 
         if (dailyTarget is null)
         {
             dailyTarget = new DailyTarget
             {
+                UserId = currentUser.Id,
                 ProteinTarget = request.ProteinTarget,
                 CarbohydratesTarget = request.CarbohydratesTarget,
                 FatTarget = request.FatTarget

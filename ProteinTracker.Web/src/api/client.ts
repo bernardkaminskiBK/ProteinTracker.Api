@@ -7,7 +7,10 @@ import type {
   FoodResponse,
   ProblemDetails,
   UpdateDailyTargetRequest,
+  AuthRequest,
+  AuthResponse,
 } from '../types/api'
+import { getStoredSession, handleUnauthorized } from './authStorage'
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
 const apiBaseUrl = configuredBaseUrl.replace(/\/$/, '')
@@ -24,12 +27,14 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response
+  const session = getStoredSession()
 
   try {
     response = await fetch(`${apiBaseUrl}${path}`, {
       ...init,
       headers: {
         Accept: 'application/json',
+        ...(session ? { Authorization: `Bearer ${session.token}` } : {}),
         ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
         ...init?.headers,
       },
@@ -54,6 +59,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ? Object.values(problem.errors).flat().join(' ')
       : undefined
 
+    if (response.status === 401) {
+      handleUnauthorized()
+    }
+
     throw new ApiError(
       problem?.detail || validationMessage || problem?.title || `Request failed (${response.status}).`,
       response.status,
@@ -65,6 +74,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return (await response.json()) as T
+}
+
+export const authApi = {
+  register: (payload: AuthRequest) =>
+    request<AuthResponse>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  login: (payload: AuthRequest) =>
+    request<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 }
 
 export const foodsApi = {

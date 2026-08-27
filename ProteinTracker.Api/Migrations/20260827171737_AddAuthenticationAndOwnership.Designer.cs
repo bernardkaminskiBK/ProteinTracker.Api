@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ProteinTracker.Api.Data;
@@ -11,9 +12,11 @@ using ProteinTracker.Api.Data;
 namespace ProteinTracker.Api.Migrations
 {
     [DbContext(typeof(ProteinTrackerDbContext))]
-    partial class ProteinTrackerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260827171737_AddAuthenticationAndOwnership")]
+    partial class AddAuthenticationAndOwnership
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -183,7 +183,8 @@ public class DailySummaryServiceTests
         return new DailySummaryService(
             new FoodEntryRepository(context),
             new DailyTargetRepository(context),
-            BratislavaTimeZone);
+            BratislavaTimeZone,
+            new ProteinTracker.Api.Security.CurrentUser(1));
     }
 
     private static DateTimeOffset GetUtcBoundary(DateOnly date)
@@ -209,6 +210,7 @@ public class DailySummaryServiceTests
     {
         var food = new Food
         {
+            UserId = 1,
             Name = name,
             ProteinPer100g = protein,
             CarbohydratesPer100g = carbohydrates,
@@ -229,6 +231,7 @@ public class DailySummaryServiceTests
     {
         context.FoodEntries.Add(new FoodEntry
         {
+            UserId = 1,
             FoodId = foodId,
             AmountInGrams = amount,
             ConsumedAt = consumedAt
@@ -246,6 +249,7 @@ public class DailySummaryServiceTests
     {
         context.DailyTargets.Add(new DailyTarget
         {
+            UserId = 1,
             ProteinTarget = protein,
             CarbohydratesTarget = carbohydrates,
             FatTarget = fat

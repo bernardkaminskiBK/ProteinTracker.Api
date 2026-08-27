@@ -2,23 +2,24 @@ using ProteinTracker.Api.DTOs;
 using ProteinTracker.Api.Exceptions;
 using ProteinTracker.Api.Models;
 using ProteinTracker.Api.Repositories;
+using ProteinTracker.Api.Security;
 using ProteinTracker.Api.Utils;
 
 namespace ProteinTracker.Api.Services;
 
-public class FoodService(FoodRepository foodRepository)
+public class FoodService(FoodRepository foodRepository, CurrentUser currentUser)
 {
     public async Task<List<FoodResponse>> GetAllActiveAsync(
         CancellationToken cancellationToken = default)
     {
-        var foods = await foodRepository.GetAllActiveAsync(cancellationToken);
+        var foods = await foodRepository.GetAllActiveAsync(currentUser.Id, cancellationToken);
         return foods.Select(MapToResponse).ToList();
     }
 
     public async Task<List<FoodResponse>> GetAllArchivedAsync(
         CancellationToken cancellationToken = default)
     {
-        var foods = await foodRepository.GetAllArchivedAsync(cancellationToken);
+        var foods = await foodRepository.GetAllArchivedAsync(currentUser.Id, cancellationToken);
         return foods.Select(MapToResponse).ToList();
     }
 
@@ -38,6 +39,7 @@ public class FoodService(FoodRepository foodRepository)
 
         var food = new Food
         {
+            UserId = currentUser.Id,
             Name = request.Name.Trim(),
             ProteinPer100g = request.ProteinPer100g,
             CarbohydratesPer100g = request.CarbohydratesPer100g,
@@ -107,7 +109,7 @@ public class FoodService(FoodRepository foodRepository)
             throw new BusinessValidationException("Only archived foods can be permanently deleted.");
         }
 
-        if (await foodRepository.HasFoodEntriesAsync(id, cancellationToken))
+        if (await foodRepository.HasFoodEntriesAsync(id, currentUser.Id, cancellationToken))
         {
             throw new FoodDeletionConflictException(id);
         }
@@ -119,7 +121,7 @@ public class FoodService(FoodRepository foodRepository)
         int id,
         CancellationToken cancellationToken)
     {
-        return await foodRepository.GetByIdAsync(id, cancellationToken)
+        return await foodRepository.GetByIdAsync(id, currentUser.Id, cancellationToken)
             ?? throw new FoodNotFoundException(id);
     }
 

@@ -3,6 +3,8 @@ import { NavLink } from 'react-router-dom'
 
 interface AppShellProps {
   children: ReactNode
+  email: string
+  onLogout: () => void
 }
 
 const navigation: Array<{ path: string; label: string; icon: ReactNode }> = [
@@ -37,7 +39,7 @@ const navigation: Array<{ path: string; label: string; icon: ReactNode }> = [
   },
 ]
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, email, onLogout }: AppShellProps) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -68,9 +70,10 @@ export function AppShell({ children }: AppShellProps) {
         <div className="sidebar-note">
           <span className="status-dot" />
           <div>
-            <strong>Single-user workspace</strong>
+            <strong title={email}>{email}</strong>
             <small>Europe/Bratislava</small>
           </div>
+          <button className="logout-button" type="button" onClick={onLogout}>Log out</button>
         </div>
       </aside>
 
@@ -88,6 +91,10 @@ export function AppShell({ children }: AppShellProps) {
             <span>{item.label}</span>
           </NavLink>
         ))}
+        <button type="button" onClick={onLogout}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5M14 8l4 4-4 4M8 12h10" /></svg>
+          <span>Log out</span>
+        </button>
       </nav>
     </div>
   )

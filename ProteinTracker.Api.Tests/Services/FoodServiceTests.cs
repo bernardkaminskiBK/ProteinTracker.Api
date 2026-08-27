@@ -223,6 +223,7 @@ public class FoodServiceTests
         var food = await SeedFoodAsync(context, isArchived: true);
         context.FoodEntries.Add(new FoodEntry
         {
+            UserId = 1,
             FoodId = food.Id,
             AmountInGrams = 100m,
             ConsumedAt = DateTimeOffset.UtcNow
@@ -263,7 +264,7 @@ public class FoodServiceTests
 
     private static FoodService CreateService(ProteinTrackerDbContext context)
     {
-        return new FoodService(new FoodRepository(context));
+        return new FoodService(new FoodRepository(context), new ProteinTracker.Api.Security.CurrentUser(1));
     }
 
     private static CreateFoodRequest CreateRequest()
@@ -283,6 +284,7 @@ public class FoodServiceTests
     {
         var food = new Food
         {
+            UserId = 1,
             Name = "Oats",
             ProteinPer100g = 7m,
             CarbohydratesPer100g = 77m,

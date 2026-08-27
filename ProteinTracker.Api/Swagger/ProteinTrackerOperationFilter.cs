@@ -26,6 +26,18 @@ public class ProteinTrackerOperationFilter : IOperationFilter
         operation.Summary = documentation.Summary;
         operation.Description = documentation.Description;
 
+        if (action.ControllerName == "Auth")
+        {
+            operation.Security.Clear();
+        }
+        else if (!documentation.Responses.ContainsKey("401"))
+        {
+            operation.Responses["401"] = CreateResponse(
+                "401",
+                "A valid bearer token is required.",
+                context);
+        }
+
         if (action.ControllerName == "DailySummary" && action.ActionName == "Get")
         {
             var dateParameter = operation.Parameters
@@ -74,7 +86,7 @@ public class ProteinTrackerOperationFilter : IOperationFilter
     {
         var response = new OpenApiResponse { Description = description };
 
-        if (statusCode is "400" or "404" or "409" or "500")
+        if (statusCode is "400" or "401" or "404" or "409" or "500")
         {
             response.Content["application/problem+json"] = new OpenApiMediaType
             {
@@ -107,6 +119,17 @@ public class ProteinTrackerOperationFilter : IOperationFilter
     {
         return new Dictionary<(string, string), OperationDocumentation>
         {
+            [("Auth", "Register")] = Doc(
+                "Register an account",
+                "Creates a user with a unique case-insensitive email and securely hashed password, then returns " +
+                "a JWT for authenticated API requests. Passwords must contain at least eight characters.",
+                Responses(("201", "Account created and bearer token returned."), ("400", "Email or password is invalid."), ("409", "Email is already registered."), ("500", "Unexpected server error."))),
+            [("Auth", "Login")] = Doc(
+                "Log in",
+                "Validates the supplied credentials and returns a JWT. Authentication failures use one generic " +
+                "response and do not reveal whether the email exists.",
+                Responses(("200", "Credentials accepted and bearer token returned."), ("401", "Email or password is incorrect."), ("500", "Unexpected server error."))),
+
             [("Foods", "GetAllActive")] = Doc(
                 "List active foods",
                 "Returns reusable nutritional definitions that are currently available for new entries. " +
@@ -175,7 +198,7 @@ public class ProteinTrackerOperationFilter : IOperationFilter
 
             [("DailyTarget", "GetCurrent")] = Doc(
                 "Get the current daily macro target",
-                "Returns the single-user macro target and calculated calorie target. If no target has been " +
+                "Returns the authenticated user's macro target and calculated calorie target. If no target has been " +
                 "configured, all values are zero and no database record is created.",
                 Responses(("200", "Current target returned."), ("500", "Unexpected server error."))),
             [("DailyTarget", "Update")] = Doc(

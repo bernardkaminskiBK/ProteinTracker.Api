@@ -27,7 +27,18 @@ public class RequestExampleSchemaFilter : ISchemaFilter
                 ["carbohydratesTarget"] = new OpenApiDouble(240),
                 ["fatTarget"] = new OpenApiDouble(90)
             },
+            Type type when type == typeof(RegisterRequest) => CredentialsExample("person@example.com"),
+            Type type when type == typeof(LoginRequest) => CredentialsExample("person@example.com"),
             _ => schema.Example
+        };
+    }
+
+    private static OpenApiObject CredentialsExample(string email)
+    {
+        return new OpenApiObject
+        {
+            ["email"] = new OpenApiString(email),
+            ["password"] = new OpenApiString("correct-horse-battery-staple")
         };
     }
 

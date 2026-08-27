@@ -309,7 +309,8 @@ public class FoodEntryServiceTests
     {
         return new FoodEntryService(
             new FoodEntryRepository(context),
-            new FoodRepository(context));
+            new FoodRepository(context),
+            new ProteinTracker.Api.Security.CurrentUser(1));
     }
 
     private static async Task<Food> SeedFoodAsync(
@@ -322,6 +323,7 @@ public class FoodEntryServiceTests
     {
         var food = new Food
         {
+            UserId = 1,
             Name = name,
             ProteinPer100g = protein,
             CarbohydratesPer100g = carbohydrates,
@@ -343,6 +345,7 @@ public class FoodEntryServiceTests
     {
         var foodEntry = new FoodEntry
         {
+            UserId = 1,
             FoodId = foodId,
             AmountInGrams = amount,
             ConsumedAt = consumedAt

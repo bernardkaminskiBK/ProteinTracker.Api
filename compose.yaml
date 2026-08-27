@@ -27,6 +27,7 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__ProteinTrackerDatabase: Host=db;Port=5432;Database=${POSTGRES_DB:-protein_tracker};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       Database__MigrateOnStartup: "true"
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in .env}
     depends_on:
       db:
         condition: service_healthy

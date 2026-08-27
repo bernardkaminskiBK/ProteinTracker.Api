@@ -66,3 +66,14 @@ export interface ProblemDetails {
   status?: number
   errors?: Record<string, string[]>
 }
+
+export interface AuthRequest {
+  email: string
+  password: string
+}
+
+export interface AuthResponse {
+  token: string
+  email: string
+  expiresAt: string
+}
