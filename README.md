@@ -129,7 +129,7 @@ dotnet restore Tests/ProteinTracker.Api.Tests.csproj
 
 ### Configure PostgreSQL
 
-The application reads the `ProteinTrackerDatabase` connection string. Development settings are in `appsettings.Development.json` and target:
+The application reads the `ProteinTrackerDatabase` connection string. The safe development example targets:
 
 ```text
 Host=localhost;Port=5432;Database=protein_tracker
@@ -142,6 +142,16 @@ export ConnectionStrings__ProteinTrackerDatabase='Host=localhost;Port=5432;Datab
 ```
 
 The environment variable overrides the value in `appsettings.Development.json`.
+
+`appsettings.Development.example.json` contains a safe placeholder template. Never put real database credentials, API keys, tokens, or other secrets in tracked configuration files. Prefer environment variables or initialize .NET user-secrets locally:
+
+```bash
+dotnet user-secrets init
+dotnet user-secrets set 'ConnectionStrings:ProteinTrackerDatabase' \
+  'Host=localhost;Port=5432;Database=protein_tracker;Username=YOUR_USERNAME;Password=YOUR_PASSWORD'
+```
+
+User-secrets are stored outside the repository. Replace the placeholders only in your local command; do not commit the resulting secret value.
 
 ### Apply migrations
 

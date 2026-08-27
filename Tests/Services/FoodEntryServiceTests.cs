@@ -276,6 +276,26 @@ public class FoodEntryServiceTests
         Assert.Contains(responses, response => response.Id == inside.Id);
     }
 
+    [Fact(DisplayName = "GetByDateRangeAsync normalizes offset-aware boundaries to the equivalent UTC range")]
+    public async Task GetByDateRangeAsync_WithNonZeroOffsets_QueriesEquivalentUtcRange()
+    {
+        await using var context = CreateContext();
+        var food = await SeedFoodAsync(context);
+        var start = new DateTimeOffset(2026, 8, 26, 0, 0, 0, TimeSpan.FromHours(2));
+        var end = new DateTimeOffset(2026, 8, 27, 0, 0, 0, TimeSpan.FromHours(2));
+        await SeedEntryAsync(context, food.Id, 50m, start.ToUniversalTime().AddTicks(-1));
+        var atStart = await SeedEntryAsync(context, food.Id, 100m, start.ToUniversalTime());
+        var inside = await SeedEntryAsync(context, food.Id, 150m, end.ToUniversalTime().AddTicks(-1));
+        await SeedEntryAsync(context, food.Id, 200m, end.ToUniversalTime());
+        var service = CreateService(context);
+
+        var responses = await service.GetByDateRangeAsync(start, end);
+
+        Assert.Equal(2, responses.Count);
+        Assert.Contains(responses, response => response.Id == atStart.Id);
+        Assert.Contains(responses, response => response.Id == inside.Id);
+    }
+
     private static ProteinTrackerDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<ProteinTrackerDbContext>()

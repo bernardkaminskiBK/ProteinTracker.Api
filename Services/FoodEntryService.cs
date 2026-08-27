@@ -24,8 +24,8 @@ public class FoodEntryService(
         CancellationToken cancellationToken = default)
     {
         var foodEntries = await foodEntryRepository.GetByDateRangeAsync(
-            start,
-            end,
+            start.ToUniversalTime(),
+            end.ToUniversalTime(),
             cancellationToken);
 
         return foodEntries

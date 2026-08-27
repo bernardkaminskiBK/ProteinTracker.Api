@@ -40,6 +40,24 @@ public class ProteinTrackerOperationFilter : IOperationFilter
             dateParameter.Schema.Example = new OpenApiString("2026-08-26");
         }
 
+        if (action.ControllerName == "FoodEntries" && action.ActionName == "GetByDateRange")
+        {
+            ConfigureDateTimeOffsetParameter(
+                operation,
+                "start",
+                "2026-08-26T00:00:00+02:00",
+                "Inclusive start of the requested range. Supply an ISO 8601 offset-aware timestamp, " +
+                "for example 2026-08-26T00:00:00+02:00. The endpoint uses the value directly and " +
+                "does not interpret calendar dates or timezones. Entries satisfy start <= ConsumedAt.");
+            ConfigureDateTimeOffsetParameter(
+                operation,
+                "end",
+                "2026-08-27T00:00:00+02:00",
+                "Exclusive end of the requested range. Supply an ISO 8601 offset-aware timestamp, " +
+                "for example 2026-08-27T00:00:00+02:00. The endpoint uses the value directly and " +
+                "does not interpret calendar dates or timezones. Entries satisfy ConsumedAt < end.");
+        }
+
         foreach (var response in documentation.Responses)
         {
             operation.Responses[response.Key] = CreateResponse(
@@ -67,6 +85,22 @@ public class ProteinTrackerOperationFilter : IOperationFilter
         }
 
         return response;
+    }
+
+    private static void ConfigureDateTimeOffsetParameter(
+        OpenApiOperation operation,
+        string parameterName,
+        string example,
+        string description)
+    {
+        var parameter = operation.Parameters
+            .First(item => item.Name == parameterName);
+
+        parameter.Description = description;
+        parameter.Required = true;
+        parameter.Example = new OpenApiString(example);
+        parameter.Schema.Format = "date-time";
+        parameter.Schema.Example = new OpenApiString(example);
     }
 
     private static IReadOnlyDictionary<(string, string), OperationDocumentation> CreateDocumentation()
