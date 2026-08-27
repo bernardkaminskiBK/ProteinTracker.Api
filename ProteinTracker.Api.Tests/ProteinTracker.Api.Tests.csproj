@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../ProteinTracker.Api.csproj" />
+    <ProjectReference Include="../ProteinTracker.Api/ProteinTracker.Api.csproj" />
   </ItemGroup>
 
 </Project>

@@ -49,17 +49,17 @@ Controller → Service → Repository → EF Core → PostgreSQL
 
 | Area | Responsibility |
 | --- | --- |
-| `Controllers/` | Attribute-routed HTTP endpoints and status-code responses |
-| `Services/` | Validation, business rules, mapping, aggregation, and timezone handling |
-| `Repositories/` | Asynchronous EF Core queries and persistence |
-| `Data/` | `ProteinTrackerDbContext` and entity configuration |
-| `Models/` | Persisted domain entities |
-| `DTOs/` | HTTP request and response contracts |
-| `Utils/` | Pure reusable nutrition calculations |
-| `Exceptions/` | Business exceptions and centralized `ProblemDetails` handling |
-| `Swagger/` | OpenAPI metadata, endpoint documentation, and request examples |
-| `Migrations/` | EF Core PostgreSQL schema migrations |
-| `Tests/` | xUnit tests for calculations and service behavior |
+| `ProteinTracker.Api/Controllers/` | Attribute-routed HTTP endpoints and status-code responses |
+| `ProteinTracker.Api/Services/` | Validation, business rules, mapping, aggregation, and timezone handling |
+| `ProteinTracker.Api/Repositories/` | Asynchronous EF Core queries and persistence |
+| `ProteinTracker.Api/Data/` | `ProteinTrackerDbContext` and entity configuration |
+| `ProteinTracker.Api/Models/` | Persisted domain entities |
+| `ProteinTracker.Api/DTOs/` | HTTP request and response contracts |
+| `ProteinTracker.Api/Utils/` | Pure reusable nutrition calculations |
+| `ProteinTracker.Api/Exceptions/` | Business exceptions and centralized `ProblemDetails` handling |
+| `ProteinTracker.Api/Swagger/` | OpenAPI metadata, endpoint documentation, and request examples |
+| `ProteinTracker.Api/Migrations/` | EF Core PostgreSQL schema migrations |
+| `ProteinTracker.Api.Tests/` | xUnit tests for calculations and service behavior |
 
 Controllers are intentionally thin. They delegate validation, nutrition calculations, archive rules, and timezone behavior to services.
 
@@ -124,7 +124,7 @@ dotnet tool install --global dotnet-ef --version 8.*
 From the repository root:
 
 ```bash
-dotnet restore Tests/ProteinTracker.Api.Tests.csproj
+dotnet restore ProteinTracker.sln
 ```
 
 ### Configure PostgreSQL
@@ -141,13 +141,14 @@ Supply your own PostgreSQL username and password. Do not commit real credentials
 export ConnectionStrings__ProteinTrackerDatabase='Host=localhost;Port=5432;Database=protein_tracker;Username=YOUR_USERNAME;Password=YOUR_PASSWORD'
 ```
 
-The environment variable overrides the value in `appsettings.Development.json`.
+The environment variable overrides the value in `ProteinTracker.Api/appsettings.Development.json`.
 
-`appsettings.Development.example.json` contains a safe placeholder template. Never put real database credentials, API keys, tokens, or other secrets in tracked configuration files. Prefer environment variables or initialize .NET user-secrets locally:
+`ProteinTracker.Api/appsettings.Development.example.json` contains a safe placeholder template. Never put real database credentials, API keys, tokens, or other secrets in tracked configuration files. Prefer environment variables or initialize .NET user-secrets locally:
 
 ```bash
-dotnet user-secrets init
-dotnet user-secrets set 'ConnectionStrings:ProteinTrackerDatabase' \
+dotnet user-secrets init --project ProteinTracker.Api/ProteinTracker.Api.csproj
+dotnet user-secrets set --project ProteinTracker.Api/ProteinTracker.Api.csproj \
+  'ConnectionStrings:ProteinTrackerDatabase' \
   'Host=localhost;Port=5432;Database=protein_tracker;Username=YOUR_USERNAME;Password=YOUR_PASSWORD'
 ```
 
@@ -159,8 +160,8 @@ The repository contains the `InitialCreate` migration. Apply it with development
 
 ```bash
 ASPNETCORE_ENVIRONMENT=Development dotnet ef database update \
-  --project ProteinTracker.Api.csproj \
-  --startup-project ProteinTracker.Api.csproj
+  --project ProteinTracker.Api/ProteinTracker.Api.csproj \
+  --startup-project ProteinTracker.Api/ProteinTracker.Api.csproj
 ```
 
 This updates only the configured `protein_tracker` database. No seed data is included.
@@ -168,19 +169,19 @@ This updates only the configured `protein_tracker` database. No seed data is inc
 ### Run the API
 
 ```bash
-dotnet run --launch-profile https
+dotnet run --project ProteinTracker.Api/ProteinTracker.Api.csproj --launch-profile https
 ```
 
 The HTTPS launch profile listens on `https://localhost:7202` and also exposes `http://localhost:5132`. The HTTP-only profile can be started with:
 
 ```bash
-dotnet run --launch-profile http
+dotnet run --project ProteinTracker.Api/ProteinTracker.Api.csproj --launch-profile http
 ```
 
 ### Run tests
 
 ```bash
-dotnet test Tests/ProteinTracker.Api.Tests.csproj
+dotnet test ProteinTracker.sln
 ```
 
 The tests cover nutrition calculations and the Food, FoodEntry, DailyTarget, and DailySummary service rules, including archive behavior, upserts, current-value nutrition, UTC normalization, and Bratislava day boundaries. They use EF Core InMemory for isolation and speed; this does not replace integration testing against PostgreSQL/Npgsql for provider-specific behavior.
