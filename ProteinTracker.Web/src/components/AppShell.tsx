@@ -1,15 +1,13 @@
 import type { ReactNode } from 'react'
-import type { PageId } from '../types/ui'
+import { NavLink } from 'react-router-dom'
 
 interface AppShellProps {
-  activePage: PageId
-  onNavigate: (page: PageId) => void
   children: ReactNode
 }
 
-const navigation: Array<{ id: PageId; label: string; icon: ReactNode }> = [
+const navigation: Array<{ path: string; label: string; icon: ReactNode }> = [
   {
-    id: 'dashboard',
+    path: '/',
     label: 'Today',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -18,7 +16,7 @@ const navigation: Array<{ id: PageId; label: string; icon: ReactNode }> = [
     ),
   },
   {
-    id: 'foods',
+    path: '/foods',
     label: 'Foods',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -27,7 +25,7 @@ const navigation: Array<{ id: PageId; label: string; icon: ReactNode }> = [
     ),
   },
   {
-    id: 'target',
+    path: '/targets',
     label: 'Targets',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -39,11 +37,11 @@ const navigation: Array<{ id: PageId; label: string; icon: ReactNode }> = [
   },
 ]
 
-export function AppShell({ activePage, onNavigate, children }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <button className="brand" type="button" onClick={() => onNavigate('dashboard')}>
+        <NavLink className="brand" to="/">
           <span className="brand-mark" aria-hidden="true">
             P
           </span>
@@ -51,19 +49,19 @@ export function AppShell({ activePage, onNavigate, children }: AppShellProps) {
             <strong>Protein</strong>
             <small>Tracker</small>
           </span>
-        </button>
+        </NavLink>
 
         <nav className="main-nav" aria-label="Main navigation">
           {navigation.map((item) => (
-            <button
-              className={activePage === item.id ? 'nav-item active' : 'nav-item'}
-              key={item.id}
-              type="button"
-              onClick={() => onNavigate(item.id)}
+            <NavLink
+              className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+              end={item.path === '/'}
+              key={item.path}
+              to={item.path}
             >
               {item.icon}
               <span>{item.label}</span>
-            </button>
+            </NavLink>
           ))}
         </nav>
 
@@ -80,15 +78,15 @@ export function AppShell({ activePage, onNavigate, children }: AppShellProps) {
 
       <nav className="mobile-nav" aria-label="Mobile navigation">
         {navigation.map((item) => (
-          <button
-            className={activePage === item.id ? 'active' : ''}
-            key={item.id}
-            type="button"
-            onClick={() => onNavigate(item.id)}
+          <NavLink
+            className={({ isActive }) => isActive ? 'active' : ''}
+            end={item.path === '/'}
+            key={item.path}
+            to={item.path}
           >
             {item.icon}
             <span>{item.label}</span>
-          </button>
+          </NavLink>
         ))}
       </nav>
     </div>

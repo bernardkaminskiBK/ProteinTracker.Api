@@ -1,19 +1,21 @@
-import { useState } from 'react'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import './App.css'
 import { AppShell } from './components/AppShell'
 import { DailyTargetPage } from './pages/DailyTargetPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { FoodsPage } from './pages/FoodsPage'
-import type { PageId } from './types/ui'
 
 function App() {
-  const [activePage, setActivePage] = useState<PageId>('dashboard')
+  const navigate = useNavigate()
 
   return (
-    <AppShell activePage={activePage} onNavigate={setActivePage}>
-      {activePage === 'dashboard' && <DashboardPage onOpenFoods={() => setActivePage('foods')} />}
-      {activePage === 'foods' && <FoodsPage />}
-      {activePage === 'target' && <DailyTargetPage />}
+    <AppShell>
+      <Routes>
+        <Route path="/" element={<DashboardPage onOpenFoods={() => navigate('/foods')} />} />
+        <Route path="/foods" element={<FoodsPage />} />
+        <Route path="/targets" element={<DailyTargetPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </AppShell>
   )
 }
