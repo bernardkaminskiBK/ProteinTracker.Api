@@ -24,6 +24,10 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
                 StatusCodes.Status400BadRequest,
                 "Archived food cannot be used",
                 exception.Message),
+            FoodDeletionConflictException => (
+                StatusCodes.Status409Conflict,
+                "Food is referenced by historical entries",
+                exception.Message),
             BusinessValidationException => (
                 StatusCodes.Status400BadRequest,
                 "Validation failed",

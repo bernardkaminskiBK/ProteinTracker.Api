@@ -84,6 +84,8 @@ export const foodsApi = {
     request<FoodResponse>(`/foods/${id}/archive`, { method: 'PATCH' }),
   restore: (id: number) =>
     request<FoodResponse>(`/foods/${id}/restore`, { method: 'PATCH' }),
+  delete: (id: number) =>
+    request<void>(`/foods/${id}`, { method: 'DELETE' }),
 }
 
 export const foodEntriesApi = {

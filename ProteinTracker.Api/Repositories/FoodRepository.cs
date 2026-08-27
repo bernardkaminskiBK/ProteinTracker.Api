@@ -48,4 +48,21 @@ public class FoodRepository(ProteinTrackerDbContext context)
         context.Foods.Update(food);
         await context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<bool> HasFoodEntriesAsync(
+        int foodId,
+        CancellationToken cancellationToken = default)
+    {
+        return await context.FoodEntries
+            .AsNoTracking()
+            .AnyAsync(entry => entry.FoodId == foodId, cancellationToken);
+    }
+
+    public async Task DeleteAsync(
+        Food food,
+        CancellationToken cancellationToken = default)
+    {
+        context.Foods.Remove(food);
+        await context.SaveChangesAsync(cancellationToken);
+    }
 }

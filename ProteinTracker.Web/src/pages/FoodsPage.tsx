@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { foodsApi } from '../api/client'
+import { ApiError, foodsApi } from '../api/client'
 import { FeedbackBanner } from '../components/FeedbackBanner'
 import { FoodForm } from '../components/FoodForm'
 import { Modal } from '../components/Modal'
@@ -15,6 +15,7 @@ export function FoodsPage() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<number | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
   const [feedback, setFeedback] = useState<FeedbackMessage | null>(null)
   const [editor, setEditor] = useState<'new' | FoodResponse | null>(null)
   const [editorError, setEditorError] = useState('')
@@ -114,6 +115,25 @@ export function FoodsPage() {
     }
   }
 
+  const deleteFood = async (food: FoodResponse) => {
+    if (!window.confirm(`Permanently delete ${food.name}? This cannot be undone.`)) return
+    setDeletingId(food.id)
+    try {
+      await foodsApi.delete(food.id)
+      setFeedback({ type: 'success', text: `${food.name} permanently deleted.` })
+      await loadFoods(false)
+    } catch (error) {
+      setFeedback({
+        type: 'error',
+        text: error instanceof ApiError && error.status === 409
+          ? `${food.name} cannot be deleted because it is used by historical food entries.`
+          : getErrorMessage(error),
+      })
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return (
     <div className="page foods-page">
       <header className="page-header">
@@ -185,9 +205,14 @@ export function FoodsPage() {
                     <button className="text-button" type="button" onClick={() => { setEditorError(''); setEditor(food) }}>Edit</button>
                   )}
                   {food.isArchived ? (
-                    <button className="button secondary compact" type="button" disabled={busyId === food.id} onClick={() => void restoreFood(food)}>
-                      {busyId === food.id ? 'Restoring…' : 'Restore'}
-                    </button>
+                    <>
+                      <button className="button secondary compact" type="button" disabled={busyId === food.id || deletingId === food.id} onClick={() => void restoreFood(food)}>
+                        {busyId === food.id ? 'Restoring…' : 'Restore'}
+                      </button>
+                      <button className="text-button danger" type="button" disabled={busyId === food.id || deletingId === food.id} onClick={() => void deleteFood(food)}>
+                        {deletingId === food.id ? 'Deleting…' : 'Delete'}
+                      </button>
+                    </>
                   ) : (
                     <button className="text-button danger" type="button" disabled={busyId === food.id} onClick={() => void archiveFood(food)}>
                       {busyId === food.id ? 'Archiving…' : 'Archive'}

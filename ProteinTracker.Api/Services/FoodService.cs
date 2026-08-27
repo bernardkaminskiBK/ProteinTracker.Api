@@ -96,6 +96,25 @@ public class FoodService(FoodRepository foodRepository)
         return MapToResponse(food);
     }
 
+    public async Task DeleteAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        var food = await GetFoodOrThrowAsync(id, cancellationToken);
+
+        if (!food.IsArchived)
+        {
+            throw new BusinessValidationException("Only archived foods can be permanently deleted.");
+        }
+
+        if (await foodRepository.HasFoodEntriesAsync(id, cancellationToken))
+        {
+            throw new FoodDeletionConflictException(id);
+        }
+
+        await foodRepository.DeleteAsync(food, cancellationToken);
+    }
+
     private async Task<Food> GetFoodOrThrowAsync(
         int id,
         CancellationToken cancellationToken)

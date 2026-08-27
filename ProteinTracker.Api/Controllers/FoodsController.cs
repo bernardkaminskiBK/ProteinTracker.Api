@@ -63,4 +63,13 @@ public class FoodsController(FoodService foodService) : ControllerBase
     {
         return Ok(await foodService.RestoreAsync(id, cancellationToken));
     }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        await foodService.DeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
 }

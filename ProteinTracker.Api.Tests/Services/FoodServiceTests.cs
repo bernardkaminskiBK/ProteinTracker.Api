@@ -187,6 +187,71 @@ public class FoodServiceTests
         Assert.Equal(345m, response.CaloriesPer100g);
     }
 
+    [Fact(DisplayName = "DeleteAsync permanently deletes an unused archived food")]
+    public async Task DeleteAsync_WithUnusedArchivedFood_DeletesFood()
+    {
+        await using var context = CreateContext();
+        var food = await SeedFoodAsync(context, isArchived: true);
+        var service = CreateService(context);
+
+        await service.DeleteAsync(food.Id);
+
+        Assert.False(
+            await context.Foods.AnyAsync(),
+            "An archived food without historical references may be permanently deleted.");
+    }
+
+    [Fact(DisplayName = "DeleteAsync rejects an active food")]
+    public async Task DeleteAsync_WithActiveFood_ThrowsValidationException()
+    {
+        await using var context = CreateContext();
+        var food = await SeedFoodAsync(context, isArchived: false);
+        var service = CreateService(context);
+
+        await Assert.ThrowsAsync<BusinessValidationException>(
+            () => service.DeleteAsync(food.Id));
+
+        Assert.True(
+            await context.Foods.AnyAsync(item => item.Id == food.Id),
+            "Active foods must be archived before permanent deletion is considered.");
+    }
+
+    [Fact(DisplayName = "DeleteAsync rejects an archived food referenced by historical entries")]
+    public async Task DeleteAsync_WithReferencedArchivedFood_ThrowsConflictException()
+    {
+        await using var context = CreateContext();
+        var food = await SeedFoodAsync(context, isArchived: true);
+        context.FoodEntries.Add(new FoodEntry
+        {
+            FoodId = food.Id,
+            AmountInGrams = 100m,
+            ConsumedAt = DateTimeOffset.UtcNow
+        });
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        var service = CreateService(context);
+
+        await Assert.ThrowsAsync<FoodDeletionConflictException>(
+            () => service.DeleteAsync(food.Id));
+
+        Assert.True(
+            await context.Foods.AnyAsync(item => item.Id == food.Id),
+            "Foods referenced by historical entries must remain available for recalculation.");
+        Assert.True(
+            await context.FoodEntries.CountAsync() == 1,
+            "Rejecting food deletion must not delete or modify historical entries.");
+    }
+
+    [Fact(DisplayName = "DeleteAsync throws FoodNotFoundException for a missing food")]
+    public async Task DeleteAsync_WithMissingId_ThrowsFoodNotFoundException()
+    {
+        await using var context = CreateContext();
+        var service = CreateService(context);
+
+        await Assert.ThrowsAsync<FoodNotFoundException>(
+            () => service.DeleteAsync(404));
+    }
+
     private static ProteinTrackerDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<ProteinTrackerDbContext>()

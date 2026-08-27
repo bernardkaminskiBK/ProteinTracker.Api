@@ -74,7 +74,7 @@ public class ProteinTrackerOperationFilter : IOperationFilter
     {
         var response = new OpenApiResponse { Description = description };
 
-        if (statusCode is "400" or "404" or "500")
+        if (statusCode is "400" or "404" or "409" or "500")
         {
             response.Content["application/problem+json"] = new OpenApiMediaType
             {
@@ -141,6 +141,11 @@ public class ProteinTrackerOperationFilter : IOperationFilter
                 "Restore an archived food",
                 "Makes a food available for new entries again. Repeating this operation for an active food is safe.",
                 Responses(("200", "Food is active."), ("404", "Food not found."), ("500", "Unexpected server error."))),
+            [("Foods", "Delete")] = Doc(
+                "Permanently delete an unused archived food",
+                "Physically removes an archived food only when no historical food entries reference it. Active foods " +
+                "must be archived first, and referenced entries are never deleted or modified.",
+                Responses(("204", "Food permanently deleted."), ("400", "Food is active and must be archived first."), ("404", "Food not found."), ("409", "Historical food entries reference the food."), ("500", "Unexpected server error."))),
 
             [("FoodEntries", "GetById")] = Doc(
                 "Get a food entry",
