@@ -30,6 +30,13 @@ builder.Services.AddProteinTrackerSwagger();
 
 var app = builder.Build();
 
+if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<ProteinTrackerDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+
 app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.

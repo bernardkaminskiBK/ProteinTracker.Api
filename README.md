@@ -1,4 +1,4 @@
-# Protein Tracker API
+# Protein Tracker
 
 Protein Tracker is a single-user ASP.NET Core Web API for maintaining reusable food definitions, recording consumed food, configuring daily macronutrient targets, and viewing daily nutrition summaries.
 
@@ -7,13 +7,13 @@ The backend exposes HTTP endpoints and persists data in PostgreSQL. The reposito
 ## Current functionality
 
 - Create and edit foods with protein, carbohydrate, and fat values per 100 grams.
-- Archive and restore foods. Archiving is a reversible soft-delete operation.
+- Archive and restore foods. Unused archived foods may also be permanently deleted.
 - Record, edit, query, and delete food entries with an amount and offset-aware consumption timestamp.
 - Configure one current daily protein, carbohydrate, and fat target.
 - Retrieve a daily summary containing consumed, target, and remaining nutrition.
 - Explore and manually invoke the API through Swagger UI in development.
 
-Archived foods cannot be selected for new or reassigned food entries. Existing entries may continue referencing an archived food, and their amount or timestamp can still be corrected.
+Archived foods cannot be selected for new or reassigned food entries. Existing entries may continue referencing an archived food, and their amount or timestamp can still be corrected. Permanent deletion is limited to archived foods with no historical FoodEntry references.
 
 ## Nutrition and historical calculations
 
@@ -72,12 +72,14 @@ Controllers are intentionally thin. They delegate validation, nutrition calculat
 - Swashbuckle Swagger/OpenAPI
 - xUnit with EF Core InMemory for automated service tests
 - React 19, TypeScript, and Vite for the web application
+- React Router for client-side routes
+- Docker Compose, nginx, and PostgreSQL for the complete local container stack
 
 ## API overview
 
 | Group | Base route | Purpose |
 | --- | --- | --- |
-| Foods | `/api/foods` | List active or archived foods; get, create, update, archive, and restore food definitions |
+| Foods | `/api/foods` | List active or archived foods; get, create, update, archive, restore, and delete eligible archived food definitions |
 | Food entries | `/api/food-entries` | Get entries, query an offset-aware timestamp range, create, update, and delete consumption records |
 | Daily target | `/api/daily-target` | Read or update the single current macro target |
 | Daily summary | `/api/daily-summary` | Get consumed, target, and remaining nutrition for a Bratislava calendar date |
@@ -92,7 +94,7 @@ The initial migration creates three application tables:
 - `FoodEntries`: consumed amounts and UTC timestamps linked to Foods.
 - `DailyTargets`: the current macro-target persistence model.
 
-`Food` has a one-to-many relationship with `FoodEntry`. `FoodEntry.FoodId` is required and indexed. The foreign key uses restrictive deletion, so a referenced Food cannot be physically deleted along with historical entries. Normal Food removal uses archive/restore operations; individual FoodEntries may be physically deleted.
+`Food` has a one-to-many relationship with `FoodEntry`. `FoodEntry.FoodId` is required and indexed. The foreign key uses restrictive deletion, so a referenced Food cannot be physically deleted along with historical entries. Foods are normally archived; only unused archived Foods and individual FoodEntries may be physically deleted.
 
 Decimal nutrition and gram columns use PostgreSQL `numeric(10,3)` precision.
 
@@ -102,6 +104,7 @@ The global ASP.NET Core exception handler converts known application exceptions 
 
 - Invalid business input and attempts to assign archived foods return HTTP 400.
 - Missing foods or food entries return HTTP 404.
+- Attempts to delete Foods referenced by historical entries return HTTP 409.
 - Unexpected failures return HTTP 500 with generic client-facing details; internal exception details are not exposed.
 
 Controllers allow these exceptions to reach the centralized handler.
@@ -155,6 +158,34 @@ dotnet user-secrets set --project ProteinTracker.Api/ProteinTracker.Api.csproj \
 ```
 
 User-secrets are stored outside the repository. Replace the placeholders only in your local command; do not commit the resulting secret value.
+
+## Docker Compose
+
+Docker Compose runs the production frontend, API, and an isolated PostgreSQL database. From the repository root:
+
+```bash
+cp .env.example .env
+```
+
+Replace the username and password placeholders in `.env` with local Docker-only credentials, then start the stack:
+
+```bash
+docker compose up --build
+```
+
+Open `http://localhost:8080`. nginx serves the React application, falls back to `index.html` for `/`, `/foods`, and `/targets`, and proxies same-origin `/api` requests to the API container. PostgreSQL is available to host tools at `localhost:5433`; containers connect to it as `db:5432`.
+
+The API waits for PostgreSQL's health check and applies the existing EF Core migrations at startup because Compose sets `Database__MigrateOnStartup=true`. This flag is disabled by default outside Compose. Database files live in the `protein_tracker_postgres` named volume and survive normal container recreation.
+
+Stop the stack without deleting data:
+
+```bash
+docker compose down
+```
+
+To deliberately remove the local Docker database as well, use `docker compose down --volumes`. This permanently deletes the Compose-managed data volume.
+
+The `.env` file is ignored by Git. Never commit real database credentials or other secrets; `.env.example` contains placeholders only.
 
 ### Apply migrations
 
