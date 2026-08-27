@@ -2,7 +2,7 @@
 
 Protein Tracker is a single-user ASP.NET Core Web API for maintaining reusable food definitions, recording consumed food, configuring daily macronutrient targets, and viewing daily nutrition summaries.
 
-The backend exposes HTTP endpoints and persists data in PostgreSQL. It does not currently include a frontend, authentication, or multi-user data separation.
+The backend exposes HTTP endpoints and persists data in PostgreSQL. The repository also contains a React frontend for the core tracking workflows. Authentication and multi-user data separation are not currently included.
 
 ## Current functionality
 
@@ -60,6 +60,7 @@ Controller → Service → Repository → EF Core → PostgreSQL
 | `ProteinTracker.Api/Swagger/` | OpenAPI metadata, endpoint documentation, and request examples |
 | `ProteinTracker.Api/Migrations/` | EF Core PostgreSQL schema migrations |
 | `ProteinTracker.Api.Tests/` | xUnit tests for calculations and service behavior |
+| `ProteinTracker.Web/` | React, TypeScript, and Vite frontend with a typed API client |
 
 Controllers are intentionally thin. They delegate validation, nutrition calculations, archive rules, and timezone behavior to services.
 
@@ -70,6 +71,7 @@ Controllers are intentionally thin. They delegate validation, nutrition calculat
 - PostgreSQL through `Npgsql.EntityFrameworkCore.PostgreSQL`
 - Swashbuckle Swagger/OpenAPI
 - xUnit with EF Core InMemory for automated service tests
+- React 19, TypeScript, and Vite for the web application
 
 ## API overview
 
@@ -185,6 +187,19 @@ dotnet test ProteinTracker.sln
 ```
 
 The tests cover nutrition calculations and the Food, FoodEntry, DailyTarget, and DailySummary service rules, including archive behavior, upserts, current-value nutrition, UTC normalization, and Bratislava day boundaries. They use EF Core InMemory for isolation and speed; this does not replace integration testing against PostgreSQL/Npgsql for provider-specific behavior.
+
+### Run the frontend
+
+The current Vite version requires Node.js `^20.19.0` or `>=22.12.0`. From the repository root:
+
+```bash
+cd ProteinTracker.Web
+cp .env.example .env.local  # optional local overrides
+npm install
+npm run dev
+```
+
+Vite normally serves the app at `http://localhost:5173` and proxies `/api` to `http://localhost:5132`. Set `VITE_API_PROXY_TARGET` in `.env.local` if the API uses a different local address. Use `npm run lint` and `npm run build` for frontend verification.
 
 ## Swagger UI
 
