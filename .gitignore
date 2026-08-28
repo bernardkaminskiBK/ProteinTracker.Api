@@ -17,4 +17,5 @@ postgres-data/
 .env.*
 !.env.example
 appsettings.Local.json
+appsettings.Development.json
 appsettings.*.Local.json
