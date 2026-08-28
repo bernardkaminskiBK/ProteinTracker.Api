@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { FoodEntryRequest, FoodEntryResponse, FoodResponse } from '../types/api'
 import { dateTimeLocalToOffsetAware, toDateTimeLocalValue } from '../utils/dateTime'
+import { DateTimePickerField } from './DatePickerFields'
 
 interface FoodEntryFormProps {
   foods: FoodResponse[]
@@ -95,14 +96,12 @@ export function FoodEntryForm({ foods, entry, serverError, onSubmit, onCancel }:
           </div>
         </label>
 
-        <label className="field">
-          <span>Consumed at</span>
-          <input
-            type="datetime-local"
-            value={consumedAt}
-            onChange={(event) => setConsumedAt(event.target.value)}
-          />
-        </label>
+        <DateTimePickerField
+          className="field"
+          label="Consumed at"
+          value={consumedAt}
+          onChange={setConsumedAt}
+        />
       </div>
 
       {validationError && <p className="form-error">{validationError}</p>}

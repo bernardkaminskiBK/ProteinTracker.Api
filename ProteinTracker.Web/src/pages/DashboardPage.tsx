@@ -3,6 +3,7 @@ import { dailySummaryApi, foodEntriesApi, foodsApi } from '../api/client'
 import { FeedbackBanner } from '../components/FeedbackBanner'
 import { FoodEntryForm } from '../components/FoodEntryForm'
 import { MetricCard } from '../components/MetricCard'
+import { DatePickerField } from '../components/DatePickerFields'
 import { Modal } from '../components/Modal'
 import type {
   DailySummaryResponse,
@@ -149,16 +150,14 @@ export function DashboardPage({ onOpenFoods }: DashboardPageProps) {
           >
             ‹
           </button>
-          <label className="date-picker">
-            <span className="sr-only">Selected date</span>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(event) =>
-                setSelectedDate(event.target.value || todayInAppTimeZone())
-              }
-            />
-          </label>
+          <DatePickerField
+            className="date-picker"
+            label="Selected date"
+            hideLabel
+            value={selectedDate}
+            fallbackValue={todayInAppTimeZone()}
+            onChange={setSelectedDate}
+          />
           <button
             className="icon-button bordered"
             type="button"
