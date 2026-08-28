@@ -185,7 +185,7 @@ Replace the database placeholders and `JWT_SIGNING_KEY` with local Docker-only s
 docker compose up --build
 ```
 
-Open `http://localhost:8080`. nginx serves the React application, falls back to `index.html` for `/`, `/foods`, and `/targets`, and proxies same-origin `/api` requests to the API container. PostgreSQL is available to host tools at `localhost:5433`; containers connect to it as `db:5432`.
+Open `http://localhost:8080`. The root route redirects to `/dashboard`; nginx serves the React application, falls back to `index.html` for `/dashboard`, `/foods`, and `/targets`, and proxies same-origin `/api` requests to the API container. PostgreSQL is available to host tools at `localhost:5433`; containers connect to it as `db:5432`.
 
 The API waits for PostgreSQL's health check and applies the existing EF Core migrations at startup because Compose sets `Database__MigrateOnStartup=true`. This flag is disabled by default outside Compose. Database files live in the `protein_tracker_postgres` named volume and survive normal container recreation.
 
@@ -201,7 +201,7 @@ The `.env` file is ignored by Git. Never commit real database credentials, JWT s
 
 ## Frontend authentication
 
-The frontend protects `/`, `/foods`, and `/targets`; unauthenticated visitors are redirected to `/login`. Registration is available at `/register`. The centralized API client adds the bearer token to requests and clears the session on HTTP 401 so expired or invalid sessions return to login.
+The frontend protects `/dashboard`, `/foods`, and `/targets`; `/` redirects to `/dashboard`, and unauthenticated visitors are redirected to `/login`. Registration is available at `/register`. The centralized API client adds the bearer token to requests and clears the session on HTTP 401 so expired or invalid sessions return to login.
 
 For this local MVP, the JWT and its expiry are stored in `localStorage`. This keeps login state across refreshes and works with the same-origin nginx proxy, but JavaScript-accessible storage can expose tokens if an XSS vulnerability exists. A production deployment should prefer short-lived access tokens held in memory with refresh credentials in `Secure`, `HttpOnly`, `SameSite` cookies, alongside an appropriate CSRF strategy and a hardened content-security policy.
 

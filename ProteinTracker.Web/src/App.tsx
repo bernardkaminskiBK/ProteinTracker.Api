@@ -13,11 +13,12 @@ function App() {
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       <Route element={<ProtectedLayout />}>
-        <Route path="/" element={<DashboardRoute />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<DashboardRoute />} />
         <Route path="/foods" element={<FoodsPage />} />
         <Route path="/targets" element={<DailyTargetPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )
 }

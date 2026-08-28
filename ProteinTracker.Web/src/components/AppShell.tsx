@@ -9,7 +9,7 @@ interface AppShellProps {
 
 const navigation: Array<{ path: string; label: string; icon: ReactNode }> = [
   {
-    path: '/',
+    path: '/dashboard',
     label: 'Today',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -43,7 +43,7 @@ export function AppShell({ children, email, onLogout }: AppShellProps) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <NavLink className="brand" to="/">
+        <NavLink className="brand" to="/dashboard">
           <span className="brand-mark" aria-hidden="true">
             P
           </span>
@@ -57,7 +57,7 @@ export function AppShell({ children, email, onLogout }: AppShellProps) {
           {navigation.map((item) => (
             <NavLink
               className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
-              end={item.path === '/'}
+              end={item.path === '/dashboard'}
               key={item.path}
               to={item.path}
             >
@@ -83,7 +83,7 @@ export function AppShell({ children, email, onLogout }: AppShellProps) {
         {navigation.map((item) => (
           <NavLink
             className={({ isActive }) => isActive ? 'active' : ''}
-            end={item.path === '/'}
+            end={item.path === '/dashboard'}
             key={item.path}
             to={item.path}
           >

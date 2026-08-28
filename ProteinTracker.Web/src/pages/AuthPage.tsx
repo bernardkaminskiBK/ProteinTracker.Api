@@ -11,7 +11,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
-  if (session) return <Navigate to="/" replace />
+  if (session) return <Navigate to="/dashboard" replace />
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
@@ -26,7 +26,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     try {
       const request = { email: email.trim(), password }
       await (mode === 'login' ? login(request) : register(request))
-      const returnTo = (location.state as { from?: string } | null)?.from || '/'
+      const returnTo = (location.state as { from?: string } | null)?.from || '/dashboard'
       navigate(returnTo, { replace: true })
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Something went wrong. Please try again.')
